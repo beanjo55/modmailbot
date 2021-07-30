@@ -1,9 +1,11 @@
 const path = require("path");
 
-let userConfig;
+let localConfig;
+let ghConfig;
 
 try {
-  userConfig = require("../config");
+  localConfig = require("../config");
+  ghConfig = require("../config2");
 } catch (e) {
   throw new Error(`Config file could not be found or read! The error given was: ${e.message}`);
 }
@@ -88,13 +90,25 @@ const requiredAuth = ["clientId", "clientSecret", "redirectPath"];
 
 const finalConfig = Object.assign({}, defaultConfig);
 
-for (const [prop, value] of Object.entries(userConfig)) {
+for (const [prop, value] of Object.entries(localConfig)) {
   if (! defaultConfig.hasOwnProperty(prop)) {
     throw new Error(`Invalid option: ${prop}`);
   }
 
   finalConfig[prop] = value;
 }
+
+for (const [prop, value] of Object.entries(ghConfig)) {
+	//protect local only values, just in case
+	if (["token", "port", "url", "clientId", "clientSecret", "mongoDSN"].includes(prop)) {
+		continue;
+	}
+	if (! defaultConfig.hasOwnProperty(prop)) {
+	  throw new Error(`Invalid option: ${prop}`);
+	}
+  
+	finalConfig[prop] = value;
+  }
 
 if (! finalConfig["knex"]) {
   finalConfig["knex"] = {
